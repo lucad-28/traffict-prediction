@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { TrafficStation } from '@/data/stations';
 import { PredictionResponse } from '@/services/predictionApi';
 import { TrafficData } from '@/utils/trafficGenerator';
@@ -17,6 +18,12 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
   MapPin,
   Activity,
   Clock,
@@ -24,17 +31,22 @@ import {
   Loader2,
   BarChart3,
   Navigation,
+  Route,
 } from 'lucide-react';
+import RouteComparison from './RouteComparison';
 
 interface TrafficSidebarProps {
   stations: TrafficStation[];
   selectedStation: TrafficStation | null;
   onStationSelect: (station: TrafficStation) => void;
-  onPredict: (station: TrafficStation) => void;
+  onPredict: (station: TrafficStation) => Promise<void>;
   prediction: PredictionResponse | null;
   currentSequence: TrafficData[] | null;
   isLoading: boolean;
   error: string | null;
+  predictions: Map<number, PredictionResponse>;
+  currentSequences: Map<number, any>;
+  onRouteSelect?: (routeStations: number[]) => void;
 }
 
 const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
@@ -45,7 +57,10 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
   prediction,
   currentSequence,
   isLoading,
-  error
+  error,
+  predictions,
+  currentSequences,
+  onRouteSelect
 }) => {
   const getCongestionColor = (level: number) => {
     switch (level) {
@@ -87,25 +102,46 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
     }
   };
 
+  const [activeTab, setActiveTab] = useState<string>("predictions");
+
   return (
     <Sidebar collapsible="icon" className="border-r lg:w-80">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2">
           <Activity className="h-6 w-6 text-blue-600" />
           <h1 className="text-lg font-semibold text-gray-900 group-data-[collapsible=icon]:hidden">
-            Traffic Prediction
+            Traffic Analysis
           </h1>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="group-data-[collapsible=icon]:hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mx-2">
+            <TabsTrigger
+              value="predictions"
+              className="text-xs cursor-pointer transition-all duration-200 hover:bg-primary/20 hover:scale-105 active:scale-95"
+            >
+              <Activity className="h-3 w-3 mr-1" />
+              Predictions
+            </TabsTrigger>
+            <TabsTrigger
+              value="routes"
+              className="text-xs cursor-pointer transition-all duration-200 hover:bg-primary/20 hover:scale-105 active:scale-95"
+            >
+              <Route className="h-3 w-3 mr-1" />
+              Routes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="predictions" className="mt-0">
         {/* Station Selection */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Traffic Stations
           </SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="max-h-[400px] overflow-y-auto">
             <SidebarMenu>
               {stations.map((station) => (
                 <SidebarMenuItem key={station.ID}>
@@ -202,6 +238,19 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
           <SidebarGroup>
             <SidebarGroupLabel>Results</SidebarGroupLabel>
             <SidebarGroupContent>
+              <div className="p-2 group-data-[collapsible=icon]:hidden">
+                <div className="text-xs text-muted-foreground mb-1">
+                  {currentSequence && currentSequence.length > 0 ? (
+                    <>
+                      A las {new Date(currentSequence[currentSequence.length - 1].timestamp.getTime() + 5 * 60 * 1000).toLocaleTimeString()} el tráfico será:
+                    </>
+                  ) : (
+                    'Dentro de 5 min el tráfico será:'
+                  )}
+                </div>
+              </div>
+            </SidebarGroupContent>
+            <SidebarGroupContent>
               <div className="p-2 space-y-3 group-data-[collapsible=icon]:space-y-1">
                 <div className={`rounded-md p-3 group-data-[collapsible=icon]:p-2 ${getCongestionBgColor(prediction.congestion_level)}`}>
                   <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
@@ -244,7 +293,7 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2 space-y-2 group-data-[collapsible=icon]:hidden">
-                {currentSequence.slice(-3).map((data, index) => (
+                {currentSequence.slice(-3).reverse().map((data, index) => (
                   <div key={index} className="bg-blue-50 rounded-md p-3 text-sm">
                     <div className="flex flex-col lg:grid lg:grid-cols-2 gap-2">
                       <div>
@@ -281,6 +330,18 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+          </TabsContent>
+
+          <TabsContent value="routes" className="mt-0 h-full">
+            <RouteComparison
+              stations={stations}
+              predictions={predictions}
+              onPredict={onPredict}
+              currentSequences={currentSequences}
+              onRouteSelect={onRouteSelect}
+            />
+          </TabsContent>
+        </Tabs>
       </SidebarContent>
     </Sidebar>
   );

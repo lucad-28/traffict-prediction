@@ -43,6 +43,7 @@ const TrafficApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastGenerated, setLastGenerated] = useState<number>(0);
+  const [selectedRoute, setSelectedRoute] = useState<number[] | null>(null);
 
   const predictionApi = new PredictionApiService();
   const stationsApi = new StationsApiService();
@@ -62,7 +63,7 @@ const TrafficApp: React.FC = () => {
     setLastGenerated(Date.now());
   }, [trafficStations, trafficGenerator]);
 
-  const handlePredict = async (station: TrafficStation) => {
+  const handlePredict = async (station: TrafficStation): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
@@ -97,6 +98,7 @@ const TrafficApp: React.FC = () => {
   useEffect(() => {
     const fetchStations = async () => {
       try {
+        console.info("Fetching traffic stations...");
         const response = await stationsApi.getAllStations();
         setTrafficStations(response.stations);
       } catch (err) {
@@ -161,6 +163,9 @@ const TrafficApp: React.FC = () => {
           currentSequence={getCurrentSequence()}
           isLoading={isLoading}
           error={error}
+          predictions={predictions}
+          currentSequences={currentSequences}
+          onRouteSelect={setSelectedRoute}
         />
 
         <SidebarInset className="flex-1 flex flex-col">
@@ -211,6 +216,7 @@ const TrafficApp: React.FC = () => {
                 onStationSelect={handleStationSelect}
                 selectedStationId={selectedStation?.ID}
                 showLegend={false}
+                selectedRoute={selectedRoute}
               />
             )}
           </main>
