@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { TrafficStation } from '@/data/stations';
-import { PredictionResponse } from '@/services/predictionApi';
-import { TrafficData } from '@/utils/trafficGenerator';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { TrafficStation } from "@/data/stations";
+import { PredictionResponse } from "@/services/predictionApi";
+import { TrafficData } from "@/utils/trafficGenerator";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +16,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
   SidebarSeparator,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
   MapPin,
   Activity,
@@ -24,7 +25,8 @@ import {
   Loader2,
   BarChart3,
   Navigation,
-} from 'lucide-react';
+  ChevronDown,
+} from "lucide-react";
 
 interface TrafficSidebarProps {
   stations: TrafficStation[];
@@ -45,45 +47,67 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
   prediction,
   currentSequence,
   isLoading,
-  error
+  error,
 }) => {
+  const [isStationsCollapsed, setIsStationsCollapsed] = useState(false);
+
   const getCongestionColor = (level: number) => {
     switch (level) {
-      case 0: return 'text-green-600';
-      case 1: return 'text-yellow-600';
-      case 2: return 'text-orange-600';
-      case 3: return 'text-red-600';
-      default: return 'text-gray-600';
+      case 0:
+        return "text-green-600";
+      case 1:
+        return "text-yellow-600";
+      case 2:
+        return "text-orange-600";
+      case 3:
+        return "text-red-600";
+      default:
+        return "text-gray-600";
     }
   };
 
   const getCongestionBgColor = (level: number) => {
     switch (level) {
-      case 0: return 'bg-green-100';
-      case 1: return 'bg-yellow-100';
-      case 2: return 'bg-orange-100';
-      case 3: return 'bg-red-100';
-      default: return 'bg-gray-100';
+      case 0:
+        return "bg-green-100";
+      case 1:
+        return "bg-yellow-100";
+      case 2:
+        return "bg-orange-100";
+      case 3:
+        return "bg-red-100";
+      default:
+        return "bg-gray-100";
     }
   };
 
   const getCongestionLabel = (level: number) => {
     switch (level) {
-      case 0: return 'Free Flow';
-      case 1: return 'Light Traffic';
-      case 2: return 'Heavy Traffic';
-      case 3: return 'Congested';
-      default: return 'Unknown';
+      case 0:
+        return "Free Flow";
+      case 1:
+        return "Light Traffic";
+      case 2:
+        return "Heavy Traffic";
+      case 3:
+        return "Congested";
+      default:
+        return "Unknown";
     }
   };
 
   const getTypeLabel = (type: number) => {
     switch (type) {
-      case 0: return 'Freeway';
-      case 1: return 'Highway';
-      case 2: return 'Arterial';
-      case 3: return 'Local';
-      default: return 'Unknown';
+      case 0:
+        return "Freeway";
+      case 1:
+        return "Highway";
+      case 2:
+        return "Arterial";
+      case 3:
+        return "Local";
+      default:
+        return "Unknown";
     }
   };
 
@@ -101,38 +125,56 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
       <SidebarContent>
         {/* Station Selection */}
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center gap-2">
+          <SidebarGroupLabel
+            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md transition-colors"
+            onClick={() => setIsStationsCollapsed(!isStationsCollapsed)}
+          >
             <MapPin className="h-4 w-4" />
             Traffic Stations
+            <ChevronDown
+              className={`h-4 w-4 ml-auto transition-transform duration-200 ${
+                isStationsCollapsed ? "rotate-180" : ""
+              }`}
+            />
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {stations.map((station) => (
-                <SidebarMenuItem key={station.ID}>
-                  <SidebarMenuButton
-                    onClick={() => onStationSelect(station)}
-                    isActive={selectedStation?.ID === station.ID}
-                    className="flex-col items-start p-3 h-auto group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:h-8"
-                    tooltip={station.Name}
-                  >
-                    <div className="flex items-center gap-2 w-full group-data-[collapsible=icon]:justify-center">
-                      <Navigation className="h-4 w-4 flex-shrink-0" />
-                      <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                        <div className="font-medium text-sm truncate">
-                          {station.Name}
-                        </div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-2">
-                          <span>{station.Lanes} lanes</span>
-                          <span>•</span>
-                          <span>{getTypeLabel(station.Type === 'ML' ? 1 : station.Type === 'HV' ? 0 : 2)}</span>
+          {!isStationsCollapsed && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {stations.map((station) => (
+                  <SidebarMenuItem key={station.ID}>
+                    <SidebarMenuButton
+                      onClick={() => onStationSelect(station)}
+                      isActive={selectedStation?.ID === station.ID}
+                      className="flex-col items-start p-3 h-auto group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:h-8"
+                      tooltip={station.Name}
+                    >
+                      <div className="flex items-center gap-2 w-full group-data-[collapsible=icon]:justify-center">
+                        <Navigation className="h-4 w-4 flex-shrink-0" />
+                        <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                          <div className="font-medium text-sm truncate">
+                            {station.Name}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span>{station.Lanes} lanes</span>
+                            <span>•</span>
+                            <span>
+                              {getTypeLabel(
+                                station.Type === "ML"
+                                  ? 1
+                                  : station.Type === "HV"
+                                  ? 0
+                                  : 2
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
 
         <SidebarSeparator />
@@ -164,12 +206,16 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin group-data-[collapsible=icon]:mr-0 mr-2" />
-                      <span className="group-data-[collapsible=icon]:hidden">Predicting...</span>
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Predicting...
+                      </span>
                     </>
                   ) : (
                     <>
                       <Activity className="h-4 w-4 group-data-[collapsible=icon]:mr-0 mr-2" />
-                      <span className="group-data-[collapsible=icon]:hidden">Predict Traffic</span>
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Predict Traffic
+                      </span>
                     </>
                   )}
                 </Button>
@@ -187,7 +233,9 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="group-data-[collapsible=icon]:hidden">
-                      <h3 className="text-sm font-medium text-red-800">Error</h3>
+                      <h3 className="text-sm font-medium text-red-800">
+                        Error
+                      </h3>
                       <p className="text-sm text-red-700 mt-1">{error}</p>
                     </div>
                   </div>
@@ -203,11 +251,23 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
             <SidebarGroupLabel>Results</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="p-2 space-y-3 group-data-[collapsible=icon]:space-y-1">
-                <div className={`rounded-md p-3 group-data-[collapsible=icon]:p-2 ${getCongestionBgColor(prediction.congestion_level)}`}>
+                <div
+                  className={`rounded-md p-3 group-data-[collapsible=icon]:p-2 ${getCongestionBgColor(
+                    prediction.congestion_level
+                  )}`}
+                >
                   <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                    <div className={`w-3 h-3 rounded-full ${prediction.congestion_level === 0 ? 'bg-green-500' :
-                      prediction.congestion_level === 1 ? 'bg-yellow-500' :
-                      prediction.congestion_level === 2 ? 'bg-orange-500' : 'bg-red-500'}`}></div>
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        prediction.congestion_level === 0
+                          ? "bg-green-500"
+                          : prediction.congestion_level === 1
+                          ? "bg-yellow-500"
+                          : prediction.congestion_level === 2
+                          ? "bg-orange-500"
+                          : "bg-red-500"
+                      }`}
+                    ></div>
                     <div className="group-data-[collapsible=icon]:hidden">
                       <div className="text-sm font-medium">
                         {getCongestionLabel(prediction.congestion_level)}
@@ -221,13 +281,19 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
 
                 <div className="group-data-[collapsible=icon]:hidden space-y-2">
                   <div className="bg-gray-50 rounded-md p-3">
-                    <div className="text-xs text-muted-foreground">SPI Predicted</div>
-                    <div className="text-lg font-bold">{prediction.spi_predicted.toFixed(3)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      SPI Predicted
+                    </div>
+                    <div className="text-lg font-bold">
+                      {prediction.spi_predicted.toFixed(3)}
+                    </div>
                   </div>
 
                   <div className="bg-gray-50 rounded-md p-3">
                     <div className="text-xs text-muted-foreground">Status</div>
-                    <div className="text-sm font-medium">{prediction.status}</div>
+                    <div className="text-sm font-medium">
+                      {prediction.status}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -245,7 +311,10 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
             <SidebarGroupContent>
               <div className="p-2 space-y-2 group-data-[collapsible=icon]:hidden">
                 {currentSequence.slice(-3).map((data, index) => (
-                  <div key={index} className="bg-blue-50 rounded-md p-3 text-sm">
+                  <div
+                    key={index}
+                    className="bg-blue-50 rounded-md p-3 text-sm"
+                  >
                     <div className="flex flex-col lg:grid lg:grid-cols-2 gap-2">
                       <div>
                         <span className="text-muted-foreground">Flow:</span>
@@ -260,7 +329,9 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Occupancy:</span>
+                        <span className="text-muted-foreground">
+                          Occupancy:
+                        </span>
                         <span className="ml-1 font-medium text-blue-600">
                           {(data.avgOccupancy * 100).toFixed(1)}%
                         </span>

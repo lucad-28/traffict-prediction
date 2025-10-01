@@ -17,7 +17,7 @@ export interface ApiError {
 }
 
 export class PredictionApiService {
-  private readonly apiUrl = 'http://localhost:8000/predict';
+  private readonly apiUrl = 'https://traffict-predict-api-452792205673.southamerica-west1.run.app/predict';
 
   async predict(trafficSequence: TrafficData[]): Promise<PredictionResponse> {
     // Mocked response for development/testing
