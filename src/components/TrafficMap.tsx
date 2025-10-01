@@ -27,9 +27,9 @@ const MarkerClusterGroup = dynamic(
 
 interface TrafficMapProps {
   stations: TrafficStation[];
-  predictions: Map<string, PredictionResponse>;
+  predictions: Map<number, PredictionResponse>;
   onStationSelect: (station: TrafficStation) => void;
-  selectedStationId?: string;
+  selectedStationId?: number;
   showLegend?: boolean;
   className?: string;
 }
@@ -139,8 +139,8 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
   // Calculate map center based on stations
   const center: [number, number] = stations.length > 0
-    ? [stations.reduce((sum, s) => sum + s.lat, 0) / stations.length,
-       stations.reduce((sum, s) => sum + s.lng, 0) / stations.length]
+    ? [stations.reduce((sum, s) => sum + s.Latitude, 0) / stations.length,
+       stations.reduce((sum, s) => sum + s.Longitude, 0) / stations.length]
     : [34.0522, -118.2437];
 
   return (
@@ -182,14 +182,14 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
         <MarkerClusterGroup>
           {stations.map((station) => {
-            const prediction = predictions.get(station.id);
+            const prediction = predictions.get(station.ID);
             const congestionLevel = prediction?.congestion_level ?? 0;
-            const isSelected = selectedStationId === station.id;
+            const isSelected = selectedStationId === station.ID;
 
             return (
               <CircleMarker
-                key={station.id}
-                center={[station.lat, station.lng]}
+                key={station.ID}
+                center={[station.Latitude, station.Longitude]}
                 radius={isSelected ? 12 : 8}
                 color={getColor(congestionLevel)}
                 fillColor={getColor(congestionLevel)}
@@ -213,7 +213,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                   <div className="min-w-[280px] p-2">
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="font-semibold text-base text-gray-900 leading-tight">
-                        {station.name}
+                        {station.Name}
                       </h3>
                       <div
                         className="w-6 h-6 rounded-full border-2 border-white shadow-sm ml-2 flex-shrink-0"
@@ -224,13 +224,13 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="space-y-1">
                         <div className="text-gray-600">
-                          <strong>Station ID:</strong> {station.id}
+                          <strong>Station ID:</strong> {station.ID}
                         </div>
                         <div className="text-gray-600">
-                          <strong>Lanes:</strong> {station.lanes}
+                          <strong>Lanes:</strong> {station.Lanes}
                         </div>
                         <div className="text-gray-600">
-                          <strong>Type:</strong> {getTypeLabel(station.type)}
+                          <strong>Type:</strong> {getTypeLabel(station.Type === 'ML' ? 1 : station.Type === 'HV' ? 0 : 2)}
                         </div>
                       </div>
 
@@ -262,7 +262,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                     </div>
 
                     <div className="mt-3 pt-2 border-t text-xs text-gray-500">
-                      <strong>Coordinates:</strong> {station.lat.toFixed(4)}, {station.lng.toFixed(4)}
+                      <strong>Coordinates:</strong> {station.Latitude.toFixed(4)}, {station.Longitude.toFixed(4)}
                     </div>
                   </div>
                 </Popup>

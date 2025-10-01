@@ -80,17 +80,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               Select Station
             </label>
             <select
-              value={selectedStation?.id || ''}
+              value={selectedStation?.ID || ''}
               onChange={(e) => {
-                const station = stations.find(s => s.id === e.target.value);
+                const station = stations.find(s => s.ID === Number(e.target.value));
                 if (station) onStationSelect(station);
               }}
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
             >
               <option value="">Choose a station...</option>
               {stations.map((station) => (
-                <option key={station.id} value={station.id}>
-                  {station.name}
+                <option key={station.ID} value={station.ID}>
+                  {station.Name}
                 </option>
               ))}
             </select>
@@ -134,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="space-y-3">
                 <div className="bg-gray-50 p-3 rounded-md">
                   <div className="text-sm text-gray-600">Station</div>
-                  <div className="font-medium">{selectedStation.name}</div>
+                  <div className="font-medium">{selectedStation.Name}</div>
                 </div>
 
                 <div className="bg-gray-50 p-3 rounded-md">

@@ -21,33 +21,33 @@ export class PredictionApiService {
 
   async predict(trafficSequence: TrafficData[]): Promise<PredictionResponse> {
     // Mocked response for development/testing
-    // const formattedSequence = this.formatSequenceForApi(trafficSequence);
-    // const response = await fetch(this.apiUrl, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     sequence: formattedSequence
-    //   }),
-    // });
-    // if (!response.ok) {
-    //   const errorData: ApiError = await response.json().catch(() => ({
-    //     error: `HTTP ${response.status}: ${response.statusText}`
-    //   }));
-    //   throw new Error(errorData.message || errorData.error || 'Prediction API request failed');
-    // }
-    // const result: PredictionResponse = await response.json();
-    // this.validatePredictionResponse(result);
-    // return result;
+    const formattedSequence = this.formatSequenceForApi(trafficSequence);
+    const response = await fetch(this.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sequence: formattedSequence
+      }),
+    });
+    if (!response.ok) {
+      const errorData: ApiError = await response.json().catch(() => ({
+        error: `HTTP ${response.status}: ${response.statusText}`
+      }));
+      throw new Error(errorData.message || errorData.error || 'Prediction API request failed');
+    }
+    const result: PredictionResponse = await response.json();
+    this.validatePredictionResponse(result);
+    return result;
 
     // Return a mock response
-    return {
-      spi_predicted: 0.85,
-      congestion_level: 2,
-      congestion_label: 'Heavy Traffic',
-      status: 'success',
-    };
+    // return {
+    //   spi_predicted: 0.85,
+    //   congestion_level: 2,
+    //   congestion_label: 'Heavy Traffic',
+    //   status: 'success',
+    // };
   }
 
   private formatSequenceForApi(trafficSequence: TrafficData[]): number[][] {

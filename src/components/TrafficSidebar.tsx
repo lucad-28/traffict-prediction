@@ -108,23 +108,23 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
           <SidebarGroupContent>
             <SidebarMenu>
               {stations.map((station) => (
-                <SidebarMenuItem key={station.id}>
+                <SidebarMenuItem key={station.ID}>
                   <SidebarMenuButton
                     onClick={() => onStationSelect(station)}
-                    isActive={selectedStation?.id === station.id}
+                    isActive={selectedStation?.ID === station.ID}
                     className="flex-col items-start p-3 h-auto group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:h-8"
-                    tooltip={station.name}
+                    tooltip={station.Name}
                   >
                     <div className="flex items-center gap-2 w-full group-data-[collapsible=icon]:justify-center">
                       <Navigation className="h-4 w-4 flex-shrink-0" />
                       <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                         <div className="font-medium text-sm truncate">
-                          {station.name}
+                          {station.Name}
                         </div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
-                          <span>{station.lanes} lanes</span>
+                          <span>{station.Lanes} lanes</span>
                           <span>•</span>
-                          <span>{getTypeLabel(station.type)}</span>
+                          <span>{getTypeLabel(station.Type === 'ML' ? 1 : station.Type === 'HV' ? 0 : 2)}</span>
                         </div>
                       </div>
                     </div>
@@ -148,10 +148,10 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
               <div className="p-2 space-y-3">
                 <div className="group-data-[collapsible=icon]:hidden">
                   <div className="text-sm font-medium text-gray-900 mb-1">
-                    {selectedStation.name}
+                    {selectedStation.Name}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Station ID: {selectedStation.id}
+                    Station ID: {selectedStation.ID}
                   </div>
                 </div>
 
@@ -268,7 +268,7 @@ const TrafficSidebar: React.FC<TrafficSidebarProps> = ({
                       <div>
                         <span className="text-muted-foreground">Hour:</span>
                         <span className="ml-1 font-medium text-blue-600">
-                          {data.hour}:00
+                          {data.timestamp.toLocaleString()}
                         </span>
                       </div>
                     </div>

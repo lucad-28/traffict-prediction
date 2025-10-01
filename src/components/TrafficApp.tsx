@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { trafficStations, TrafficStation } from "@/data/stations";
+import { TrafficStation } from "@/data/stations";
 import {
   TrafficDataGenerator,
   TrafficSequence,
@@ -18,6 +18,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { StationsApiService } from "@/services/stationsApi";
 
 const TrafficMap = dynamic(() => import("./TrafficMap"), {
   ssr: false,
@@ -29,25 +30,29 @@ const TrafficMap = dynamic(() => import("./TrafficMap"), {
 });
 
 const TrafficApp: React.FC = () => {
+  const [trafficStations, setTrafficStations] = useState<TrafficStation[]>([]);
   const [selectedStation, setSelectedStation] = useState<TrafficStation | null>(
     null
   );
   const [predictions, setPredictions] = useState<
-    Map<string, PredictionResponse>
+    Map<number, PredictionResponse>
   >(new Map());
   const [currentSequences, setCurrentSequences] = useState<
-    Map<string, TrafficSequence>
+    Map<number, TrafficSequence>
   >(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastGenerated, setLastGenerated] = useState<number>(0);
 
   const predictionApi = new PredictionApiService();
+  const stationsApi = new StationsApiService();
 
-  const generateSequencesForAllStations = useCallback(() => {
+  const generateSequencesForAllStations = useCallback((isInitial: boolean = false) => {
+    if (trafficStations.length === 0) return;
+
     const trafficGenerator = new TrafficDataGenerator();
-    const sequences = trafficGenerator.generateForAllStations(trafficStations);
-    const sequenceMap = new Map<string, TrafficSequence>();
+    const sequences = trafficGenerator.generateForAllStations(trafficStations, isInitial);
+    const sequenceMap = new Map<number, TrafficSequence>();
 
     sequences.forEach((sequence) => {
       sequenceMap.set(sequence.stationId, sequence);
@@ -55,14 +60,14 @@ const TrafficApp: React.FC = () => {
 
     setCurrentSequences(sequenceMap);
     setLastGenerated(Date.now());
-  }, []);
+  }, [trafficStations]);
 
   const handlePredict = async (station: TrafficStation) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const sequence = currentSequences.get(station.id);
+      const sequence = currentSequences.get(station.ID);
       if (!sequence) {
         throw new Error("No traffic data available for this station");
       }
@@ -71,7 +76,7 @@ const TrafficApp: React.FC = () => {
 
       setPredictions((prev) => {
         const newPredictions = new Map(prev);
-        newPredictions.set(station.id, prediction);
+        newPredictions.set(station.ID, prediction);
         return newPredictions;
       });
     } catch (err) {
@@ -90,10 +95,28 @@ const TrafficApp: React.FC = () => {
   };
 
   useEffect(() => {
-    generateSequencesForAllStations();
+    const fetchStations = async () => {
+      try {
+        const response = await stationsApi.getAllStations();
+        setTrafficStations(response.stations);
+      } catch (err) {
+        console.error('Error fetching stations:', err);
+        setError('Failed to load traffic stations');
+      }
+    };
 
+    fetchStations();
+  }, []);
+
+  useEffect(() => {
+    if (trafficStations.length === 0) return;
+
+    // Generar secuencia inicial completa
+    generateSequencesForAllStations(true);
+
+    // Cada 5 minutos, agregar solo un nuevo punto de datos
     const interval = setInterval(() => {
-      generateSequencesForAllStations();
+      generateSequencesForAllStations(false);
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
@@ -101,13 +124,13 @@ const TrafficApp: React.FC = () => {
 
   const getCurrentSequence = (): TrafficData[] | null => {
     if (!selectedStation) return null;
-    const sequence = currentSequences.get(selectedStation.id);
+    const sequence = currentSequences.get(selectedStation.ID);
     return sequence?.sequence || null;
   };
 
   const getCurrentPrediction = (): PredictionResponse | null => {
     if (!selectedStation) return null;
-    return predictions.get(selectedStation.id) || null;
+    return predictions.get(selectedStation.ID) || null;
   };
 
   const formatLastGenerated = (): string => {
@@ -186,7 +209,7 @@ const TrafficApp: React.FC = () => {
                 stations={trafficStations}
                 predictions={predictions}
                 onStationSelect={handleStationSelect}
-                selectedStationId={selectedStation?.id}
+                selectedStationId={selectedStation?.ID}
                 showLegend={false}
               />
             )}

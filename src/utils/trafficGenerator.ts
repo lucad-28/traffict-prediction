@@ -8,56 +8,81 @@ export interface TrafficData {
   dayOfWeek: number;
   lanes: number;
   laneType: number;
+  timestamp: Date;
 }
 
 export interface TrafficSequence {
-  stationId: string;
+  stationId: number;
   sequence: TrafficData[];
   timestamp: number;
 }
 
 export class TrafficDataGenerator {
-  private lastSequences: Map<string, TrafficData[]> = new Map();
+  private lastSequences: Map<number, TrafficData[]> = new Map();
 
-  generateSequence(station: TrafficStation): TrafficSequence {
+  generateSequence(station: TrafficStation, isInitial: boolean = false): TrafficSequence {
     const now = new Date();
-    const hour = now.getHours();
-    const dayOfWeek = now.getDay();
+    let sequence: TrafficData[];
 
-    const sequence: TrafficData[] = [];
-    let previousData = this.getLastDataPoint(station.id);
+    if (isInitial || !this.lastSequences.has(station.ID)) {
+      // Generar secuencia inicial completa de 12 registros
+      sequence = [];
+      let previousData: TrafficData | null = null;
 
-    for (let i = 0; i < 12; i++) {
-      const sequenceHour = hour;
-      const timeSlot = this.getTimeSlot(sequenceHour);
+      for (let i = 11; i >= 0; i--) {
+        const timeOffset = new Date(now.getTime() - (i * 5 * 60 * 1000));
+        const newData = this.generateDataPoint(station, timeOffset, previousData);
+        sequence.push(newData);
+        previousData = newData;
+      }
+    } else {
+      // Obtener secuencia existente
+      const existingSequence = this.lastSequences.get(station.ID)!;
 
-      const baseFlow = this.generateFlow(timeSlot, station.lanes);
-      const baseOccupancy = this.generateOccupancy(timeSlot);
-      const baseSpeed = this.generateSpeed(timeSlot);
+      // Generar un nuevo punto de datos
+      const previousData = existingSequence[existingSequence.length - 1];
+      const newData = this.generateDataPoint(station, now, previousData);
 
-      const newData: TrafficData = {
-        totalFlow: this.applyGradualChange(previousData?.totalFlow || baseFlow, baseFlow, 0.15),
-        avgOccupancy: this.applyGradualChange(previousData?.avgOccupancy || baseOccupancy, baseOccupancy, 0.15),
-        avgSpeed: this.applyGradualChange(previousData?.avgSpeed || baseSpeed, baseSpeed, 0.15),
-        hour: sequenceHour,
-        dayOfWeek: dayOfWeek,
-        lanes: station.lanes,
-        laneType: station.type
-      };
-
-      newData.avgSpeed = this.adjustSpeedBasedOnCorrelation(newData.totalFlow, newData.avgOccupancy);
-
-      sequence.push(newData);
-      previousData = newData;
+      // Ventana deslizante: eliminar el más antiguo y agregar el nuevo
+      sequence = [...existingSequence.slice(1), newData];
     }
 
-    this.lastSequences.set(station.id, sequence);
+    this.lastSequences.set(station.ID, sequence);
 
     return {
-      stationId: station.id,
+      stationId: station.ID,
       sequence,
       timestamp: Date.now()
     };
+  }
+
+  private generateDataPoint(
+    station: TrafficStation,
+    timestamp: Date,
+    previousData: TrafficData | null
+  ): TrafficData {
+    const sequenceHour = timestamp.getHours();
+    const dayOfWeek = timestamp.getDay();
+    const timeSlot = this.getTimeSlot(sequenceHour);
+
+    const baseFlow = this.generateFlow(timeSlot, station.Lanes);
+    const baseOccupancy = this.generateOccupancy(timeSlot);
+    const baseSpeed = this.generateSpeed(timeSlot);
+
+    const newData: TrafficData = {
+      totalFlow: this.applyGradualChange(previousData?.totalFlow || baseFlow, baseFlow, 0.15),
+      avgOccupancy: this.applyGradualChange(previousData?.avgOccupancy || baseOccupancy, baseOccupancy, 0.15),
+      avgSpeed: this.applyGradualChange(previousData?.avgSpeed || baseSpeed, baseSpeed, 0.15),
+      hour: sequenceHour,
+      dayOfWeek: dayOfWeek,
+      lanes: station.Lanes,
+      laneType: station.Type === 'ML' ? 1 : station.Type === 'HV' ? 0 : 2,
+      timestamp: timestamp
+    };
+
+    newData.avgSpeed = this.adjustSpeedBasedOnCorrelation(newData.totalFlow, newData.avgOccupancy);
+
+    return newData;
   }
 
   private getTimeSlot(hour: number): 'morning_peak' | 'day' | 'evening_peak' | 'night' {
@@ -129,7 +154,7 @@ export class TrafficDataGenerator {
     return previous + (change > 0 ? maxChange : -maxChange);
   }
 
-  private getLastDataPoint(stationId: string): TrafficData | null {
+  private getLastDataPoint(stationId: number): TrafficData | null {
     const lastSequence = this.lastSequences.get(stationId);
     if (lastSequence && lastSequence.length > 0) {
       return lastSequence[lastSequence.length - 1];
@@ -142,7 +167,7 @@ export class TrafficDataGenerator {
     return Math.random() * (max - min) + min;
   }
 
-  generateForAllStations(stations: TrafficStation[]): TrafficSequence[] {
-    return stations.map(station => this.generateSequence(station));
+  generateForAllStations(stations: TrafficStation[], isInitial: boolean = false): TrafficSequence[] {
+    return stations.map(station => this.generateSequence(station, isInitial));
   }
 }
