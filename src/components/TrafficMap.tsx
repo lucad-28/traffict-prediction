@@ -17,6 +17,7 @@ const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLaye
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 const CircleMarker = dynamic(() => import('react-leaflet').then(mod => mod.CircleMarker), { ssr: false });
+const Polyline = dynamic(() => import('react-leaflet').then(mod => mod.Polyline), { ssr: false });
 
 // MarkerClusterGroup for better performance with many stations
 const MarkerClusterGroup = dynamic(
@@ -32,6 +33,7 @@ interface TrafficMapProps {
   selectedStationId?: number;
   showLegend?: boolean;
   className?: string;
+  selectedRoute?: number[] | null;
 }
 
 
@@ -71,7 +73,8 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   onStationSelect,
   selectedStationId,
   showLegend = true,
-  className = ''
+  className = '',
+  selectedRoute
 }) => {
   const [isClient, setIsClient] = useState(false);
 
@@ -179,6 +182,44 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+
+        {/* Draw selected route */}
+        {selectedRoute && selectedRoute.length > 1 && (
+          <>
+            {selectedRoute.map((stationId, index) => {
+              if (index === selectedRoute.length - 1) return null;
+
+              const currentStation = stations.find(s => s.ID === stationId);
+              const nextStation = stations.find(s => s.ID === selectedRoute[index + 1]);
+
+              if (!currentStation || !nextStation) return null;
+
+              const prediction = predictions.get(nextStation.ID);
+              const spi = prediction?.spi_predicted ?? 50;
+
+              // Color based on SPI
+              let color = '#22c55e'; // green
+              if (spi < 25) color = '#ef4444'; // red
+              else if (spi < 50) color = '#f97316'; // orange
+              else if (spi < 75) color = '#3b82f6'; // blue
+
+              return (
+                <Polyline
+                  key={`route-${stationId}-${nextStation.ID}`}
+                  positions={[
+                    [currentStation.Latitude, currentStation.Longitude],
+                    [nextStation.Latitude, nextStation.Longitude]
+                  ]}
+                  pathOptions={{
+                    color,
+                    weight: 5,
+                    opacity: 0.8,
+                  }}
+                />
+              );
+            })}
+          </>
+        )}
 
         <MarkerClusterGroup>
           {stations.map((station) => {
