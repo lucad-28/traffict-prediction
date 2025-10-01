@@ -46,11 +46,11 @@ const TrafficApp: React.FC = () => {
 
   const predictionApi = new PredictionApiService();
   const stationsApi = new StationsApiService();
+  const trafficGenerator = useState(() => new TrafficDataGenerator())[0];
 
   const generateSequencesForAllStations = useCallback((isInitial: boolean = false) => {
     if (trafficStations.length === 0) return;
 
-    const trafficGenerator = new TrafficDataGenerator();
     const sequences = trafficGenerator.generateForAllStations(trafficStations, isInitial);
     const sequenceMap = new Map<number, TrafficSequence>();
 
@@ -60,7 +60,7 @@ const TrafficApp: React.FC = () => {
 
     setCurrentSequences(sequenceMap);
     setLastGenerated(Date.now());
-  }, [trafficStations]);
+  }, [trafficStations, trafficGenerator]);
 
   const handlePredict = async (station: TrafficStation) => {
     setIsLoading(true);
