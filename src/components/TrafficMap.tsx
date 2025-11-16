@@ -14,7 +14,6 @@ const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapCo
   loading: () => <div className="h-96 bg-gray-200 animate-pulse rounded flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /> Loading map...</div>
 });
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 const CircleMarker = dynamic(() => import('react-leaflet').then(mod => mod.CircleMarker), { ssr: false });
 const Polyline = dynamic(() => import('react-leaflet').then(mod => mod.Polyline), { ssr: false });
@@ -39,20 +38,20 @@ interface TrafficMapProps {
 
 const getColor = (level: number) => {
   switch (level) {
-    case 0: return '#22c55e'; // green
-    case 1: return '#eab308'; // yellow
-    case 2: return '#f97316'; // orange
-    case 3: return '#ef4444'; // red
+    case 0: return '#388E3C'; // Very smooth - Green
+    case 1: return '#FBC02D'; // Smooth - Yellow
+    case 2: return '#F57C00'; // Mild congestion - Orange
+    case 3: return '#D32F2F'; // Heavy congestion - Red
     default: return '#6b7280'; // gray
   }
 };
 
 const getCongestionLabel = (level: number) => {
   switch (level) {
-    case 0: return 'Free Flow';
-    case 1: return 'Light Traffic';
-    case 2: return 'Heavy Traffic';
-    case 3: return 'Congested';
+    case 0: return 'Very Smooth';
+    case 1: return 'Smooth';
+    case 2: return 'Mild Congestion';
+    case 3: return 'Heavy Congestion';
     default: return 'Unknown';
   }
 };
@@ -82,52 +81,6 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     setIsClient(true);
   }, []);
 
-  // Custom marker icon using L.divIcon (client only)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const LRef = useRef<any>(null);
-  useEffect(() => {
-    if (isClient && typeof window !== 'undefined') {
-      import('leaflet').then(L => {
-        LRef.current = L;
-      });
-    }
-  }, [isClient]);
-
-  const createCustomIcon = (congestionLevel: number, isSelected: boolean = false) => {
-    if (!LRef.current) return undefined;
-    const color = getColor(congestionLevel);
-    const size = isSelected ? 28 : 22;
-    const borderWidth = isSelected ? 4 : 2;
-    const borderColor = isSelected ? '#3b82f6' : 'white';
-    return LRef.current.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          background-color: ${color};
-          border: ${borderWidth}px solid ${borderColor};
-          border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: ${isSelected ? '12px' : '10px'};
-          color: white;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        "
-        onmouseover="this.style.transform='scale(1.1)'"
-        onmouseout="this.style.transform='scale(1)'"
-        >
-          ${congestionLevel}
-        </div>
-      `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  };
 
   if (!isClient) {
     return (
@@ -276,24 +229,48 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                       </div>
 
                       {prediction ? (
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           <div className="text-gray-600">
-                            <strong>Congestion:</strong>
-                            <span className={`ml-1 px-2 py-1 rounded text-xs font-medium ${
-                              congestionLevel === 0 ? 'bg-green-100 text-green-800' :
-                              congestionLevel === 1 ? 'bg-yellow-100 text-yellow-800' :
-                              congestionLevel === 2 ? 'bg-orange-100 text-orange-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {getCongestionLabel(congestionLevel)}
-                            </span>
+                            <strong>SPI:</strong> {prediction.spi_predicted.toFixed(1)}
                           </div>
                           <div className="text-gray-600">
-                            <strong>SPI:</strong> {prediction.spi_predicted.toFixed(2)}
+                            <strong>Estado:</strong> {prediction.fuzzy_classification?.dominant_label || getCongestionLabel(congestionLevel)}
                           </div>
-                          <div className="text-gray-600">
-                            <strong>Status:</strong> {prediction.status}
-                          </div>
+
+                          {/* Mini fuzzy classification chart */}
+                          {prediction.fuzzy_classification?.ranked_categories && (
+                            <div className="mini-membership">
+                              <div className="text-xs font-medium text-gray-700 mb-1">Grados de Pertenencia:</div>
+                              {prediction.fuzzy_classification.ranked_categories.slice(0, 2).map((cat, index) => (
+                                <div key={index} className="mini-bar">
+                                  <span>{cat.label}</span>
+                                  <div
+                                    style={{
+                                      width: `${Math.max(cat.membership * 60, 8)}px`,
+                                      backgroundColor: cat.color
+                                    }}
+                                    title={`${Math.round(cat.membership * 100)}%`}
+                                  ></div>
+                                  <span className="text-xs">{Math.round(cat.membership * 100)}%</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Confidence level */}
+                          {prediction.confidence_level && (
+                            <div className="text-gray-600">
+                              <strong>Confianza:</strong>
+                              <span className={`ml-1 px-1 py-0.5 rounded text-xs font-medium ${
+                                prediction.confidence_level === 'high' ? 'bg-green-100 text-green-800' :
+                                prediction.confidence_level === 'medium' ? 'bg-orange-100 text-orange-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {prediction.confidence_level === 'high' ? 'Alta' :
+                                 prediction.confidence_level === 'medium' ? 'Media' : 'Baja'}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-gray-500 text-sm italic">

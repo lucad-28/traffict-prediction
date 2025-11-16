@@ -76,6 +76,23 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Fuzzy Classification Colors */
+  --heavy-congestion: #D32F2F;
+  --mild-congestion: #F57C00;
+  --smooth: #FBC02D;
+  --very-smooth: #388E3C;
+
+  /* Confidence Colors */
+  --confidence-high: #4CAF50;
+  --confidence-medium: #FF9800;
+  --confidence-low: #F44336;
+
+  /* UI Base Colors */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --text-primary: #212121;
+  --text-secondary: #757575;
 }
 
 .dark {
@@ -118,5 +135,97 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Fuzzy Classification Components */
+  .linguistic-description {
+    @apply p-3 rounded-md bg-gray-50 text-gray-700 border-l-4 border-blue-400;
+  }
+
+  .linguistic-description p {
+    @apply text-sm leading-relaxed m-0;
+  }
+
+  .confidence-badge {
+    @apply flex items-center gap-2;
+  }
+
+  .confidence-badge .label {
+    @apply text-sm text-gray-600;
+  }
+
+  .confidence-badge .badge {
+    @apply px-2 py-1 rounded-full text-xs font-medium text-white;
+  }
+
+  .confidence-badge .badge-high {
+    background-color: var(--confidence-high);
+  }
+
+  .confidence-badge .badge-medium {
+    background-color: var(--confidence-medium);
+  }
+
+  .confidence-badge .badge-low {
+    background-color: var(--confidence-low);
+  }
+
+  .membership-chart {
+    @apply space-y-2;
+  }
+
+  .membership-chart h4 {
+    @apply text-sm font-medium text-gray-900 mb-3;
+  }
+
+  .membership-bar {
+    @apply space-y-1;
+  }
+
+  .bar-label {
+    @apply flex justify-between items-center text-sm;
+  }
+
+  .category-name {
+    @apply font-medium text-gray-700;
+  }
+
+  .membership-value {
+    @apply text-gray-600;
+  }
+
+  .bar-container {
+    @apply w-full bg-gray-200 rounded-md h-8 overflow-hidden;
+  }
+
+  .bar-fill {
+    @apply h-full rounded-md transition-all duration-500 ease-out flex items-center justify-center text-xs font-medium text-white;
+  }
+
+  .transition-alert {
+    @apply p-3 rounded-md border-l-4 border-yellow-400 bg-yellow-50;
+  }
+
+  .transition-alert .transition-note {
+    @apply text-xs text-yellow-700 mt-1 m-0;
+  }
+
+  /* Mini membership chart for map popups */
+  .mini-membership {
+    @apply space-y-1;
+  }
+
+  .mini-bar {
+    @apply flex items-center gap-2 text-xs;
+  }
+
+  .mini-bar span {
+    @apply min-w-[80px] text-gray-600;
+  }
+
+  .mini-bar div {
+    @apply h-2 rounded-full min-w-[40px];
   }
 }

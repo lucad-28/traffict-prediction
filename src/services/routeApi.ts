@@ -2,6 +2,7 @@ import { RouteRequest, RouteResponse } from '@/types/routes';
 
 export class RouteApiService {
   private readonly apiUrl = 'https://traffict-predict-api-452792205673.southamerica-west1.run.app/routes/suggest';
+  //private readonly apiUrl = 'http://localhost:8000/routes/suggest';
 
   async suggestRoutes(request: RouteRequest): Promise<RouteResponse> {
     const response = await fetch(this.apiUrl, {

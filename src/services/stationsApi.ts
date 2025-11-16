@@ -8,6 +8,7 @@ export interface StationsResponse {
 
 export class StationsApiService {
   private baseUrl = 'https://traffict-predict-api-452792205673.southamerica-west1.run.app';
+  //private baseUrl = 'http://localhost:8000';
 
   async getAllStations(): Promise<StationsResponse> {
     const response = await fetch(`${this.baseUrl}/stations`, {
